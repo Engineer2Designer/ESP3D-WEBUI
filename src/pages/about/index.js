@@ -179,13 +179,16 @@ const About = () => {
     }
     const onFWGit = (e) => {
         useUiContextFn.haptic()
-        window.open(
+        const i = useSettingsContextFn.getValue("Screen")
+        const url =
             interfaceSettings.current.custom &&
-                interfaceSettings.current.custom.fwurl
+            interfaceSettings.current.custom.fwurl
                 ? interfaceSettings.current.custom.fwurl
-                : fwUrl,
-            "_blank"
-        )
+                : i
+                ? fwUrl[1]
+                : fwUrl[0]
+
+        window.open(url, "_blank")
         e.target.blur()
     }
     const onWebUiUpdate = (e) => {
@@ -267,6 +270,22 @@ const About = () => {
         )
     }
 
+    const valueTranslated = (value) => {
+        if (
+            value.startsWith("ON (") ||
+            value.startsWith("OFF (") ||
+            value.startsWith("shared (")
+        ) {
+            const reg_search = /(?<label>[^\(]*)\s\((?<content>[^\)]*)/
+            let res = reg_search.exec(value)
+            if (res) {
+                return T(res.groups.label) + " (" + T(res.groups.content) + ")"
+            }
+        }
+
+        return T(value)
+    }
+
     const filesSelected = (e) => {
         if (inputFilesRef.current.files.length > 0) {
             const titleConfirmation = isFwUpdate ? T("S30") : T("S31")
@@ -331,7 +350,9 @@ const About = () => {
                     <CenterLeft>
                         <ul>
                             <li>
-                                <span class="text-primary">{T("S150")}: </span>
+                                <span class="text-primary text-label">
+                                    {T("S150")}:{" "}
+                                </span>
                                 <span class="text-dark">
                                     <Esp3dVersion />
                                 </span>
@@ -356,8 +377,8 @@ const About = () => {
                                 )}
                             </li>
                             <li>
-                                <span class="text-primary">
-                                    {T("FW ver")}:{" "}
+                                <span class="text-primary text-label">
+                                    {T("FW ver")}:
                                 </span>
                                 <span class="text-dark">
                                     {props.find(
@@ -375,19 +396,24 @@ const About = () => {
                                     icon={<Github />}
                                     onClick={onFWGit}
                                 />
-                                <ButtonImg
-                                    sm
-                                    mx2
-                                    tooltip
-                                    data-tooltip={T("S172")}
-                                    icon={<UploadCloud />}
-                                    label={T("S25")}
-                                    onClick={onFWUpdate}
-                                />
+                                {connectionSettings.current.WebUpdate ==
+                                    "Enabled" && (
+                                    <ButtonImg
+                                        sm
+                                        mx2
+                                        tooltip
+                                        data-tooltip={T("S172")}
+                                        icon={<UploadCloud />}
+                                        label={T("S25")}
+                                        onClick={onFWUpdate}
+                                    />
+                                )}
                             </li>
                             <CustomEntry />
                             <li>
-                                <span class="text-primary">{T("S18")}: </span>
+                                <span class="text-primary text-label">
+                                    {T("S18")}:
+                                </span>
                                 <span class="text-dark">
                                     {getBrowserInformation()}
                                 </span>
@@ -396,11 +422,11 @@ const About = () => {
                                 if (id != "FW ver")
                                     return (
                                         <li>
-                                            <span class="text-primary">
-                                                {T(id)}:{" "}
+                                            <span class="text-primary text-label">
+                                                {T(id)}:
                                             </span>
                                             <span class="text-dark">
-                                                {T(value)}
+                                                {valueTranslated(value)}
                                             </span>
                                         </li>
                                     )

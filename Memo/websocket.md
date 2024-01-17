@@ -10,7 +10,9 @@ there are 2
 
 ## Terminal websocket
 
-use subprotocol `webui-v3`
+subprotocol: `webui-v3`
+
+port: webport number + 1
 
 ### <u>text mode</u>
 
@@ -36,7 +38,7 @@ Format: `<label>:<message>`
     -   `NOTIFICATION:<message>`
         Forward the message sent by [ESP600] to webUI toast system
 
-    -   `SENSOR: <value>[<unit>] <value2>[<unit2>] ...
+    -   `SENSOR: <value>[<unit>] <value2>[<unit2>] ...`
         The sensor connected to ESP like DHT22
 
 -   from WebUI to ESP
@@ -54,7 +56,8 @@ Reserved
 
 ## Data websocket
 
-use sub protocol `arduino`
+protocol: `arduino`
+port: configurable in settings
 
 ### <u>text mode</u>
 

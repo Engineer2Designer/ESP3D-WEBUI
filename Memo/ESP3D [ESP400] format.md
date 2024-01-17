@@ -3,7 +3,7 @@
 Only sent in JSON format
 
 ```
-{"Settings":[
+{"cmd":"400","status":"ok","data":[
 {"F":"network/network","P":"130","T":"S","V":"esp3d","H":"hostname","S":"32","M":"1"},
 {"F":"network/network","P":"0","T":"B","V":"1","H":"radio mode","O":[{"none":"0"},
 {"sta":"1"},
@@ -84,12 +84,12 @@ or
         -   I: for integer
         -   B: for Byte
         -   A: for IP address / Mask
-        -   F: for float (only grblHal)
-        -   M: for bits mask (only grblHal)
-        -   X: for exclusive bitsfield (only grblHal)
+        -   F: for float (only grblHAL)
+        -   M: for bits mask (only grblHAL)
+        -   X: for exclusive bitsfield (only grblHAL)
     -   V: is current value, if type is string and value is `********`, (8 stars) then it is a password
-    -   E: is integer for exactess / precision of float/double value (only grblHal)
-    -   U: is text unit of value (only grblHal)
+    -   E: is integer for exactess / precision of float/double value (only grblHAL)
+    -   U: is text unit of value (only grblHAL)
     -   H: is text label of value
     -   S: is max size if type is string, and max possible value if value is number (byte, integer)
     -   M: is min size if type is string, and min possible value if value is number (byte, integer)

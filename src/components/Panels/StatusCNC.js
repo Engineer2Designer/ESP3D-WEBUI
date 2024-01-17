@@ -74,11 +74,15 @@ const StatusControls = () => {
                                 {streamStatus.name
                                     ? ` (${streamStatus.type}) ${
                                           streamStatus.name
-                                      } ${(
-                                          (streamStatus.processed /
-                                              streamStatus.total) *
-                                          100
-                                      ).toFixed(0)}%`
+                                      } ${
+                                          streamStatus.total
+                                              ? (
+                                                    (streamStatus.processed /
+                                                        streamStatus.total) *
+                                                    100
+                                                ).toFixed(0)
+                                              : streamStatus.processed
+                                      }%`
                                     : ""}
                             </div>
                         )}
@@ -162,7 +166,7 @@ const StatusPanel = () => {
                     cmd: "#CYCLESTART#",
                     icon: <Play />,
                     desc: T("CN61"),
-                    depend: ["Hold"],
+                    depend: ["Hold", "Tool"],
                 },
             ],
         },

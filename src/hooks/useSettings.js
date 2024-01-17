@@ -36,7 +36,11 @@ import {
     setCurrentLanguage,
     T,
 } from "../components/Translations"
-import { defaultPreferences, useTargetContextFn } from "../targets"
+import {
+    defaultPreferences,
+    useTargetContextFn,
+    variablesList,
+} from "../targets"
 import {
     importPreferences,
     formatPreferences,
@@ -98,6 +102,7 @@ const useSettings = () => {
                         !jsonResult.data
                     ) {
                         toasts.addToast({ content: T("S194"), type: "error" })
+
                         connection.setConnectionState({
                             connected: false,
                             authenticate: false,
@@ -106,8 +111,8 @@ const useSettings = () => {
                         })
                         return
                     }
-
                     connectionSettings.current = jsonResult.data
+                    processData("core", "ESP800", true)
 
                     document.title = connectionSettings.current.Hostname
                     if (
@@ -189,12 +194,12 @@ const useSettings = () => {
                     if (next) next()
                 },
                 onFail: (error) => {
-                    connection.setConnectionState({
-                        connected: false,
-                        authenticate: false,
-                        page: "error",
-                    })
                     if (!error.startsWith("401")) {
+                        connection.setConnectionState({
+                            connected: false,
+                            authenticate: false,
+                            page: "error",
+                        })
                         toasts.addToast({ content: error, type: "error" })
                         console.log("Error")
                     }
@@ -327,10 +332,24 @@ const useSettings = () => {
                                 //Send commands at start
                                 if (cmds.length > 0) {
                                     cmds.forEach((cmd, index) => {
-                                        sendCommand(
-                                            cmd,
-                                            cmdEntry.id + "-" + index
-                                        )
+                                        if (cmd.trim().length > 0) {
+                                            if (
+                                                typeof variablesList.formatCommand !==
+                                                "undefined"
+                                            ) {
+                                                sendCommand(
+                                                    variablesList.formatCommand(
+                                                        cmd
+                                                    ),
+                                                    cmdEntry.id + "-" + index
+                                                )
+                                            } else {
+                                                sendCommand(
+                                                    cmd,
+                                                    cmdEntry.id + "-" + index
+                                                )
+                                            }
+                                        }
                                     })
                                 }
                                 if (refreshtime != 0) {
@@ -340,12 +359,28 @@ const useSettings = () => {
                                             refreshtime,
                                             () => {
                                                 cmds.forEach((cmd, index) => {
-                                                    sendCommand(
-                                                        cmd,
-                                                        cmdEntry.id +
-                                                            "-" +
-                                                            index
-                                                    )
+                                                    if (cmd.trim().length > 0) {
+                                                        if (
+                                                            typeof variablesList.formatCommand !==
+                                                            "undefined"
+                                                        ) {
+                                                            sendCommand(
+                                                                variablesList.formatCommand(
+                                                                    cmd
+                                                                ),
+                                                                cmdEntry.id +
+                                                                    "-" +
+                                                                    index
+                                                            )
+                                                        } else {
+                                                            sendCommand(
+                                                                cmd,
+                                                                cmdEntry.id +
+                                                                    "-" +
+                                                                    index
+                                                            )
+                                                        }
+                                                    }
                                                 })
                                             }
                                         )
@@ -422,10 +457,11 @@ const useSettings = () => {
                     if (setLoading) {
                         setLoading(false)
                     }
-                    toasts.addToast({
-                        content: error + " preferences.json",
-                        type: "error",
-                    })
+                    if (error != "404 - Not Found")
+                        toasts.addToast({
+                            content: error + " preferences.json",
+                            type: "error",
+                        })
                     console.log("No valid preferences.json")
                     loadTheme()
                 },

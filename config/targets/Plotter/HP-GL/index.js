@@ -27,7 +27,6 @@ let lastconnection = Date.now()
 let logindone = false
 const sessiontTime = 60000
 let countStatus = 0
-let change = false
 
 function getLastconnection() {
     return lastconnection
@@ -36,6 +35,10 @@ function getLastconnection() {
 function hasEnabledAuthentication() {
     return enableAuthentication
 }
+
+let posx = 0
+let posy = 0
+let pendown = 0
 
 const commandsQuery = (req, res, SendWS) => {
     let url = req.query.cmd ? req.query.cmd : req.originalUrl
@@ -56,25 +59,6 @@ const commandsQuery = (req, res, SendWS) => {
     }
     lastconnection = Date.now()
 
-    if (req.query.cmd && req.query.cmd == "?") {
-        countStatus++
-        if (countStatus == 1)
-            SendWS(
-                "<Idle|WPos:0.000,0.000,0.000,1.000,1.000|FS:0,0|WCO:0.000,0.000,0.000,1.000,1.000>\n"
-            )
-        if (countStatus == 2)
-            SendWS(
-                "<Idle|WPos:0.000,0.000,0.000,1.000,1.000|FS:0,0|Ov:100,100,100|Pn:XYZ>\n"
-            )
-        if (countStatus > 2)
-            SendWS(
-                "<Idle|WPos:0.000,0.000,0.000,1.000,1.000|FS:0,0|A:S|Pn:P>\n"
-            )
-        if (countStatus == 10) countStatus = 0
-        res.send("")
-        return
-    }
-
     if (url.indexOf("SIM:") != -1) {
         const response = url.substring(url.indexOf("SIM:") + 4)
         SendWS(response + "\n" + "ok\n")
@@ -88,8 +72,8 @@ const commandsQuery = (req, res, SendWS) => {
             status: "ok",
             data: {
                 FWVersion: "3.0.0.a111",
-                FWTarget: "grblhal",
-                FWTargetID: "80",
+                FWTarget: "hp_gl",
+                FWTargetID: "90",
                 Setup: "Enabled",
                 SDConnection: "direct",
                 SerialProtocol: "Socket",
@@ -101,10 +85,8 @@ const commandsQuery = (req, res, SendWS) => {
                 WiFiMode: "STA",
                 WebUpdate: "Enabled",
                 FlashFileSystem: "LittleFS",
-                HostPath: "/www",
+                HostPath: "/",
                 Time: "none",
-                CameraID: "4",
-                CameraName: "ESP32 Cam",
             },
         })
         return
@@ -113,6 +95,21 @@ const commandsQuery = (req, res, SendWS) => {
         res.send("192.168.1.111")
         return
     }
+
+    if (url.indexOf("ESP401") != -1) {
+        const reg_search1 = /P=(?<pos>[^\s]*)/i
+        let posres = null
+        if ((posres = reg_search1.exec(url)) == null) {
+            console.log("Cannot find P= in url")
+        }
+        res.json({
+            cmd: "401",
+            status: "ok",
+            data: posres.groups.pos ? posres.groups.pos : "Unknown position",
+        })
+        return
+    }
+
     if (url.indexOf("ESP420") != -1) {
         res.json({
             cmd: "420",
@@ -146,7 +143,7 @@ const commandsQuery = (req, res, SendWS) => {
                 { id: "ap", value: "OFF" },
                 { id: "mac", value: "24:6F:28:4C:89:49" },
                 { id: "notification", value: "ON(line)" },
-                { id: "targetfw", value: "grbl" },
+                { id: "targetfw", value: "hp_gl" },
                 { id: "FW ver", value: "3.0.0.a111" },
                 { id: "FW arch", value: "ESP32" },
             ],
@@ -186,101 +183,38 @@ const commandsQuery = (req, res, SendWS) => {
         return
     }
 
-    if (url.indexOf("$G") != -1) {
-        change = !change
-        //SendWS("[GC:G0 G54 G17 G21 G90 G94 M5 M9 T0 F0.0 S0]\n")
-        if (change) {
-            SendWS(
-                "[GC:G0 G54 G17 G21 G90 G92 G94 G49 G98 G51:5 M5 M6 M9 T0 F0 S0.]\n"
-            )
-        } else {
-            SendWS("[GC:G0 G54 G17 G21 G90 G94 G49 G98 M56 M5 M9 T0 F0 S0.]\n")
-        }
-
+    if (url.indexOf("OA") != -1) {
+        SendWS(`${posx},${posy},${pendown}\n`)
         res.send("")
         return
     }
 
-    if (url.indexOf("$I") != -1) {
-        SendWS("[VER:1.1f.20170801:]\n" + "[OPT:VZHTL,15,128]\n")
+    if (url.indexOf("PR") != -1) {
+        const pos_pattern = /PR(?<xrel>[+|-]?\d+),(?<yrel>[+|-]?\d+)/i
+        let posres = pos_pattern.exec(url)
+        posx = posx + parseInt(posres.groups.xrel)
+        posy = posy + parseInt(posres.groups.yrel)
+        //SendWS(`${posx},${posy},${pendown}\n`)
         res.send("")
         return
     }
 
-    if (url.indexOf("\x18") != -1) {
-        SendWS("Grbl 1.1f ['$' for help]\n")
+    if (url.indexOf("PD") != -1) {
+        pendown = 1
+        //SendWS(`${posx},${posy},${pendown}\n`)
+        res.send("")
+        return
+    }
+    if (url.indexOf("PU") != -1) {
+        pendown = 0
+        //SendWS(`${posx},${posy},${pendown}\n`)
         res.send("")
         return
     }
 
-    if (url.indexOf("$#") != -1) {
-        SendWS(
-            "[G54:4.000,0.000,0.000]\n" +
-                "[G55:4.000,6.000,7.000]\n" +
-                "[G56:0.000,0.000,0.000]\n" +
-                "[G57:0.000,0.000,0.000]\n" +
-                "[G58:0.000,0.000,0.000]\n" +
-                "[G59:0.000,0.000,0.000]\n" +
-                "[G28:1.000,2.000,0.000]\n" +
-                "[G30:4.000,6.000,0.000]\n" +
-                "[G92:0.000,0.000,0.000]\n" +
-                "[TLO:0.000]\n" +
-                "[PRB:0.000,0.000,0.000:1]\n"
-        )
-        res.send("")
-        return
-    }
-
-    if (url.indexOf("$$") != -1) {
-        SendWS(
-            "$0=3\n" +
-                "$1=250\n" +
-                "$2=0\n" +
-                "$3=0\n" +
-                "$4=0\n" +
-                "$5=1\n" +
-                "$6=0\n" +
-                "$10=1\n" +
-                "$11=0.010\n" +
-                "$12=0.002\n" +
-                "$13=0\n" +
-                "$20=0\n" +
-                "$21=0\n" +
-                "$22=0\n" +
-                "$23=3\n" +
-                "$24=200.000\n" +
-                "$25=2000.000\n" +
-                "$26=250\n" +
-                "$27=1.000\n" +
-                "$30=1000.000\n" +
-                "$31=0.000\n" +
-                "$32=0\n" +
-                "$100=100.000\n" +
-                "$101=100.000\n" +
-                "$102=100.000\n" +
-                "$103=100.000\n" +
-                "$104=100.000\n" +
-                "$105=100.000\n" +
-                "$110=1000.000\n" +
-                "$111=1000.000\n" +
-                "$112=1000.000\n" +
-                "$113=1000.000\n" +
-                "$114=1000.000\n" +
-                "$115=1000.000\n" +
-                "$120=200.000\n" +
-                "$121=200.000\n" +
-                "$122=200.000\n" +
-                "$123=200.000\n" +
-                "$124=200.000\n" +
-                "$125=200.000\n" +
-                "$130=300.000\n" +
-                "$131=300.000\n" +
-                "$132=300.000\n" +
-                "$133=300.000\n" +
-                "$134=300.000\n" +
-                "$135=300.000\n" +
-                "ok\n"
-        )
+    if (url.indexOf(String.fromCharCode(27) + ".") != -1) {
+        //it is esc command ESC.
+        //SendWS("EScape command\n")
         res.send("")
         return
     }
@@ -545,9 +479,10 @@ const commandsQuery = (req, res, SendWS) => {
                     F: "system/system",
                     P: "461",
                     T: "B",
-                    V: "10",
+                    V: "90",
                     H: "targetfw",
                     O: [
+                        { hp_gl: "90" },
                         { repetier: "50" },
                         { marlin: "20" },
                         { smoothieware: "40" },

@@ -168,12 +168,11 @@ const TerminalPanel = () => {
             label: T("S76"),
             displayToggle: () => (
                 <span class="feather-icon-container">
-                    {" "}
                     {isVerbose ? (
                         <CheckCircle size="0.8rem" />
                     ) : (
                         <Circle size="0.8rem" />
-                    )}{" "}
+                    )}
                 </span>
             ),
             onClick: toggleVerboseMode,
@@ -284,8 +283,11 @@ const TerminalPanel = () => {
                             default:
                             //do nothing
                         }
-                        if (isVerbose || isVerbose == line.isverboseOnly)
+                        if (line.isAction) {
+                            return <pre class="action" title={line.actionType}>{line.content}</pre>
+                        } else if (isVerbose || isVerbose === line.isverboseOnly) {
                             return <pre class={className}>{line.content}</pre>
+                        }
                     })}
                 <div ref={messagesEndRef} />
             </div>
